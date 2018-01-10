@@ -63,20 +63,33 @@ call plug#end()
 
 set backspace=indent,eol,start 
 
-" func Handler(channel, msg)
-"     echo 'x'
-" endfunc
-
-" function! Acomp(timer)
-"     let g:channel = ch_open('127.0.0.1:8888', {'callback': "Handler"})
-"     " call ch_sendexpr(g:channel, 'xxx')
-"     echom ch_evalexpr(g:channel, 'xxx')
-"     echom ch_evalexpr(g:channel, 'yyy')
-" endfunction
-
-" let timer = timer_start(1500, 'Acomp',
-" 				\ {'repeat': 3})
 let g:channel = ch_open('127.0.0.1:8888')
-echo ch_status(g:channel)
-echo ch_evalexpr(g:channel, {'src': "import os\nimport a", 'line': 2, 'col': 8, 'path': 'example.py'})
-echo ch_evalexpr(g:channel, {'src': "import os\nimport os.p", 'line': 2, 'col': 11, 'path': 'example.py'})
+
+inoremap <F5> <C-R>=JediComplete()<CR>
+
+func! JediCompleteHandler(channel, msg)
+    let l:completions = []
+    for l:comp in a:msg
+        call add(l:completions, {'abbr': l:comp['name'], 'word': l:comp['complete'], 'menu': l:comp['description']})
+    endfor
+    call complete(col('.'), l:completions)
+    return ''
+endfunc
+
+func! GetContext()
+    let l:pos = getcurpos()
+    let l:ret = {'src': join(getline(1, '$'), "\n"), 'line': l:pos[1], 'col': l:pos[2] - 1, 'path': expand('%:p')}
+    " let l:ret = {'bufnr':bufnr('%'), 'curpos':getcurpos(), 'changedtick':b:changedtick}
+    " let l:ret['lnum'] = l:ret['curpos'][1]
+    " let l:ret['col'] = l:ret['curpos'][2]
+    " let l:ret['filetype'] = &filetype
+    " let l:ret['filepath'] = expand('%:p')
+    " let l:ret['typed'] = strpart(getline(l:ret['lnum']),0,l:ret['col']-1)
+    return l:ret
+endfunc
+
+func! JediComplete()
+    let l:ctx = GetContext()
+    call ch_sendexpr(g:channel, l:ctx, {'callback': "JediCompleteHandler"})
+    return ''
+endfunc

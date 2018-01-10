@@ -9,9 +9,9 @@ def completions(src, line, col, path):
     print(dir(res[0]))
     return [{
         'name': c.name,
-        'description': c.description
+        'description': c.description,
+        'complete': c.complete
     } for c in res]
-
 
 
 async def handle_echo(reader, writer):
@@ -22,11 +22,11 @@ async def handle_echo(reader, writer):
         if not message:
             break
 
-        request = json.loads(message)
-        response = completions(**request[1])
-
         addr = writer.get_extra_info('peername')
         print("Received %r from %r" % (message, addr))
+
+        request = json.loads(message)
+        response = completions(**request[1])
 
         r = json.dumps([request[0], response])
         print("Send: %r" % r)
