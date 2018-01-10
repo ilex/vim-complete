@@ -6,7 +6,7 @@ import json
 def completions(src, line, col, path):
     script = jedi.Script(src, line, col, path)
     res = script.completions()
-    print(dir(res[0]))
+
     return [{
         'name': c.name,
         'description': c.description,
@@ -22,14 +22,14 @@ async def handle_echo(reader, writer):
         if not message:
             break
 
-        addr = writer.get_extra_info('peername')
-        print("Received %r from %r" % (message, addr))
+        # addr = writer.get_extra_info('peername')
+        # print("Received %r from %r" % (message, addr))
 
         request = json.loads(message)
         response = completions(**request[1])
 
         r = json.dumps([request[0], response])
-        print("Send: %r" % r)
+        # print("Send: %r" % r)
         writer.write(r.encode())
         await writer.drain()
 

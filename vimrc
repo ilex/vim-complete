@@ -43,10 +43,10 @@ call plug#end()
     " endif
 " let g:asyncomplete_auto_popup = 1
 
-" function! s:check_back_space() abort
-"     let col = col('.') - 1
-"     return !col || getline('.')[col - 1]  =~ '\s'
-" endfunction
+function! s:check_back_space() abort
+    let col = col('.') - 1
+    return !col || getline('.')[col - 1]  =~ '\s'
+endfunction
 
 " inoremap <silent><expr> <TAB>
 "   \ pumvisible() ? "\<C-n>" :
@@ -55,11 +55,11 @@ call plug#end()
 " inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
 
     " Use Tab to navigate
-    " inoremap <silent><expr> <Tab> pumvisible() ? "\<C-n>" : "\<Tab>"
-    " inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
-    " inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<cr>"
+    inoremap <silent><expr> <Tab> pumvisible() ? "\<C-n>" : "\<Tab>"
+    inoremap <expr> <S-Tab> pumvisible() ? "\<C-p>" : "\<S-Tab>"
+    inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<cr>"
 " " }}}
-
+set completeopt=menu,menuone,noselect
 
 set backspace=indent,eol,start 
 
@@ -72,8 +72,8 @@ func! JediCompleteHandler(channel, msg)
     for l:comp in a:msg
         call add(l:completions, {'abbr': l:comp['name'], 'word': l:comp['complete'], 'menu': l:comp['description']})
     endfor
+    
     call complete(col('.'), l:completions)
-    return ''
 endfunc
 
 func! GetContext()
@@ -93,3 +93,29 @@ func! JediComplete()
     call ch_sendexpr(g:channel, l:ctx, {'callback': "JediCompleteHandler"})
     return ''
 endfunc
+
+augroup vim_complete 
+    autocmd! * <buffer>
+    " autocmd InsertEnter <buffer> call s:python_cm_insert_enter()
+    " autocmd InsertEnter <buffer> call s:change_tick_start()
+    " autocmd InsertLeave <buffer> call s:change_tick_stop()
+    " working together with timer, the timer is for detecting changes
+    " popup menu is visible. TextChangedI will not be triggered when popup
+    " menu is visible, but TextChangedI is more efficient and faster than
+    " timer when popup menu is not visible.
+    autocmd TextChangedI <buffer> call s:on_text_changed()
+augroup END
+
+func! StartComplete(last_curpos, x)
+    if a:last_curpos == getcurpos()
+        call JediComplete()
+    endif
+endfunc
+
+func! s:on_text_changed()
+    if !s:check_back_space()
+        call timer_start(200, function('StartComplete', [getcurpos()]))
+    endif
+endfunc
+
+
