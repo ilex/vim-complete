@@ -48,6 +48,12 @@ function! s:check_back_space() abort
     return !col || getline('.')[col - 1]  =~ '\s'
 endfunction
 
+
+function! s:check_do_complete() abort
+    let col = col('.') - 1
+    return col && getline('.')[0:col - 1]  =~ '\h\w\*\.\=$'
+endfunction
+
 " inoremap <silent><expr> <TAB>
 "   \ pumvisible() ? "\<C-n>" :
 "   \ <SID>check_back_space() ? "\<TAB>" :
@@ -113,7 +119,7 @@ func! StartComplete(last_curpos, x)
 endfunc
 
 func! s:on_text_changed()
-    if !s:check_back_space()
+    if s:check_do_complete()
         call timer_start(200, function('StartComplete', [getcurpos()]))
     endif
 endfunc
